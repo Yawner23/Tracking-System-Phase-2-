@@ -5,9 +5,9 @@
     $user = auth()->user();
     $account = request()->route('account');
 
-    $canCreate = $user && $user->hasPagePermission('roles', 'can_create');
-    $canEdit = $user && $user->hasPagePermission('roles', 'can_edit');
-    $canDelete = $user && $user->hasPagePermission('roles', 'can_delete');
+    $canCreate = $user && $user->hasPagePermission('branches', 'can_create');
+    $canEdit = $user && $user->hasPagePermission('branches', 'can_edit');
+    $canDelete = $user && $user->hasPagePermission('branches', 'can_delete');
 
     $hasActions = $canEdit || $canDelete;
 @endphp
@@ -15,15 +15,17 @@
 <div class="max-w-screen-2xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Roles</h1>
-            <p class="text-sm text-gray-500">Manage system roles and access levels.</p>
+            <h1 class="text-2xl font-bold text-gray-800">Branches</h1>
+            <p class="text-sm text-gray-500">
+                Manage branch locations and contact information.
+            </p>
         </div>
 
         @if($canCreate)
-            <a href="{{ route('roles.create', ['account' => $account]) }}"
+            <a href="{{ route('branches.create', ['account' => $account]) }}"
                class="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold">
                 <i class="ri-add-line mr-2"></i>
-                Add Role
+                Add Branch
             </a>
         @endif
     </div>
@@ -40,7 +42,8 @@
                 <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
                     <tr>
                         <th class="px-6 py-4">#</th>
-                        <th class="px-6 py-4">Role Name</th>
+                        <th class="px-6 py-4">Address</th>
+                        <th class="px-6 py-4">Contact Number</th>
                         <th class="px-6 py-4">Created At</th>
 
                         @if($hasActions)
@@ -50,25 +53,29 @@
                 </thead>
 
                 <tbody class="divide-y divide-gray-200">
-                    @forelse($roles as $role)
+                    @forelse($branches as $branch)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-gray-600">
-                                {{ $loop->iteration + ($roles->currentPage() - 1) * $roles->perPage() }}
+                                {{ $loop->iteration + ($branches->currentPage() - 1) * $branches->perPage() }}
                             </td>
 
                             <td class="px-6 py-4 font-semibold text-gray-900">
-                                {{ $role->name }}
+                                {{ $branch->address }}
                             </td>
 
                             <td class="px-6 py-4 text-gray-600">
-                                {{ $role->created_at?->format('M d, Y') }}
+                                {{ $branch->contact_number ?? 'N/A' }}
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                {{ $branch->created_at?->format('M d, Y') }}
                             </td>
 
                             @if($hasActions)
                                 <td class="px-6 py-4">
                                     <div class="flex justify-end gap-2">
                                         @if($canEdit)
-                                            <a href="{{ route('roles.edit', ['account' => $account, 'role' => $role->id]) }}"
+                                            <a href="{{ route('branches.edit', ['account' => $account, 'branch' => $branch->id]) }}"
                                                class="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-semibold">
                                                 <i class="ri-edit-line mr-1"></i>
                                                 Edit
@@ -76,9 +83,9 @@
                                         @endif
 
                                         @if($canDelete)
-                                            <form action="{{ route('roles.destroy', ['account' => $account, 'role' => $role->id]) }}"
+                                            <form action="{{ route('branches.destroy', ['account' => $account, 'branch' => $branch->id]) }}"
                                                   method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to delete this role?');">
+                                                  onsubmit="return confirm('Are you sure you want to delete this branch?');">
                                                 @csrf
                                                 @method('DELETE')
 
@@ -95,8 +102,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $hasActions ? 4 : 3 }}" class="px-6 py-10 text-center text-gray-500">
-                                No roles found.
+                            <td colspan="{{ $hasActions ? 5 : 4 }}" class="px-6 py-10 text-center text-gray-500">
+                                No branches found.
                             </td>
                         </tr>
                     @endforelse
@@ -104,9 +111,9 @@
             </table>
         </div>
 
-        @if($roles->hasPages())
+        @if($branches->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
-                {{ $roles->links() }}
+                {{ $branches->links() }}
             </div>
         @endif
     </div>

@@ -5,28 +5,27 @@
     $user = auth()->user();
     $account = request()->route('account');
 
-    $canView = $user && $user->hasPagePermission('role-privileges', 'can_view');
-    $canCreate = $user && $user->hasPagePermission('role-privileges', 'can_create');
-    $canEdit = $user && $user->hasPagePermission('role-privileges', 'can_edit');
-    $canDelete = $user && $user->hasPagePermission('role-privileges', 'can_delete');
+    $canCreate = $user && $user->hasPagePermission('privileges', 'can_create');
+    $canEdit = $user && $user->hasPagePermission('privileges', 'can_edit');
+    $canDelete = $user && $user->hasPagePermission('privileges', 'can_delete');
 
-    $hasActions = $canView || $canEdit || $canDelete;
+    $hasActions = $canEdit || $canDelete;
 @endphp
 
 <div class="max-w-screen-2xl mx-auto">
     <div class="mb-6 flex items-start justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-slate-900">Role Privileges</h1>
+            <h1 class="text-3xl font-bold text-slate-900">Privileges</h1>
             <p class="mt-1 text-sm text-slate-500">
-                Manage role permissions and assignments.
+                Manage system privileges and permission actions.
             </p>
         </div>
 
         @if($canCreate)
-            <a href="{{ route('role-privileges.create', ['account' => $account]) }}"
+            <a href="{{ route('privileges.create', ['account' => $account]) }}"
                class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800">
                 <i class="ri-add-line"></i>
-                Assign Role Privileges
+                Add Privilege
             </a>
         @endif
     </div>
@@ -43,8 +42,9 @@
                 <thead class="bg-slate-50 text-slate-700 uppercase text-xs">
                     <tr>
                         <th class="px-6 py-4">#</th>
-                        <th class="px-6 py-4">Role</th>
-                        <th class="px-6 py-4">Total Permissions</th>
+                        <th class="px-6 py-4">Privilege Name</th>
+                        <th class="px-6 py-4">Group</th>
+                        <th class="px-6 py-4">Created At</th>
 
                         @if($hasActions)
                             <th class="px-6 py-4 text-right">Actions</th>
@@ -53,32 +53,29 @@
                 </thead>
 
                 <tbody class="divide-y divide-slate-200">
-                    @forelse($roles as $role)
+                    @forelse($permissions as $permission)
                         <tr class="hover:bg-slate-50">
                             <td class="px-6 py-5 text-slate-700">
-                                {{ $loop->iteration + ($roles->currentPage() - 1) * $roles->perPage() }}
+                                {{ $loop->iteration + ($permissions->currentPage() - 1) * $permissions->perPage() }}
                             </td>
 
                             <td class="px-6 py-5 font-semibold text-slate-900">
-                                {{ $role->name }}
+                                {{ $permission->name }}
                             </td>
 
                             <td class="px-6 py-5 text-slate-700">
-                                {{ $role->total_permissions ?? 0 }}
+                                {{ $permission->group ?? 'General' }}
+                            </td>
+
+                            <td class="px-6 py-5 text-slate-700">
+                                {{ $permission->created_at?->format('M d, Y') }}
                             </td>
 
                             @if($hasActions)
                                 <td class="px-6 py-5">
                                     <div class="flex justify-end gap-2">
-                                        @if($canView)
-                                            <a href="{{ route('role-privileges.show', ['account' => $account, 'role_privilege' => $role->id]) }}"
-                                               class="inline-flex items-center rounded-lg bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200">
-                                                View
-                                            </a>
-                                        @endif
-
                                         @if($canEdit)
-                                            <a href="{{ route('role-privileges.edit', ['account' => $account, 'role_privilege' => $role->id]) }}"
+                                            <a href="{{ route('privileges.edit', ['account' => $account, 'privilege' => $permission->id]) }}"
                                                class="inline-flex items-center rounded-lg bg-yellow-100 px-4 py-2 text-xs font-semibold text-yellow-700 hover:bg-yellow-200">
                                                 <i class="ri-pencil-line mr-1"></i>
                                                 Edit
@@ -86,9 +83,9 @@
                                         @endif
 
                                         @if($canDelete)
-                                            <form action="{{ route('role-privileges.destroy', ['account' => $account, 'role_privilege' => $role->id]) }}"
+                                            <form action="{{ route('privileges.destroy', ['account' => $account, 'privilege' => $permission->id]) }}"
                                                   method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to delete all privileges for this role?');">
+                                                  onsubmit="return confirm('Are you sure you want to delete this privilege?');">
                                                 @csrf
                                                 @method('DELETE')
 
@@ -105,8 +102,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $hasActions ? 4 : 3 }}" class="px-6 py-10 text-center text-slate-500">
-                                No role privileges found.
+                            <td colspan="{{ $hasActions ? 5 : 4 }}" class="px-6 py-10 text-center text-slate-500">
+                                No privileges found.
                             </td>
                         </tr>
                     @endforelse
@@ -114,9 +111,9 @@
             </table>
         </div>
 
-        @if($roles->hasPages())
+        @if($permissions->hasPages())
             <div class="border-t border-slate-200 px-6 py-4">
-                {{ $roles->links() }}
+                {{ $permissions->links() }}
             </div>
         @endif
     </div>

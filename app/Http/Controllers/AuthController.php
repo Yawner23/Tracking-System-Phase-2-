@@ -7,6 +7,36 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    private function accountPrefix($user): string
+    {
+        $roleNames = $user->roles
+            ->pluck('name')
+            ->map(fn ($role) => strtolower(str_replace(' ', '_', $role)))
+            ->toArray();
+
+        if (in_array('super_admin', $roleNames)) {
+            return 'super-admin';
+        }
+
+        if (in_array('admin', $roleNames)) {
+            return 'admin';
+        }
+
+        if (in_array('logistics', $roleNames)) {
+            return 'logistics';
+        }
+
+        if (in_array('branch', $roleNames)) {
+            return 'branch';
+        }
+
+        if (in_array('operator', $roleNames)) {
+            return 'operator';
+        }
+
+        return 'user';
+    }
+
     public function showLoginForm()
     {
         return view('login.login');
@@ -31,12 +61,18 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-       return redirect()->route('dashboard');
+        $user = Auth::user();
+
+        return redirect()->route('dashboard', [
+            'account' => $this->accountPrefix($user),
+        ]);
     }
 
     public function index()
     {
-        return view('backend.dashboard.index');
+        return redirect()->route('dashboard', [
+            'account' => $this->accountPrefix(Auth::user()),
+        ]);
     }
 
     public function logout(Request $request)

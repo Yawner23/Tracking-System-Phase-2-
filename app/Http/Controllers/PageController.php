@@ -8,11 +8,22 @@ use Illuminate\Validation\Rule;
 
 class PageController extends Controller
 {
+    private function authorizePagePermission(string $permission): void
+    {
+        $user = auth()->user();
+
+        if (!$user || !$user->hasPagePermission('pages', $permission)) {
+            abort(403, 'Unauthorized.');
+        }
+    }
+
     /**
      * Display a listing of pages.
      */
-    public function index()
+    public function index(string $account)
     {
+        $this->authorizePagePermission('can_view');
+
         $pages = Page::latest()->paginate(10);
 
         return view('backend.pages.index', compact('pages'));
@@ -21,16 +32,20 @@ class PageController extends Controller
     /**
      * Show the form for creating a new page.
      */
-    public function create()
+    public function create(string $account)
     {
+        $this->authorizePagePermission('can_create');
+
         return view('backend.pages.create');
     }
 
     /**
      * Store a newly created page.
      */
-    public function store(Request $request)
+    public function store(Request $request, string $account)
     {
+        $this->authorizePagePermission('can_create');
+
         $validated = $request->validate([
             'description' => [
                 'required',
@@ -45,24 +60,29 @@ class PageController extends Controller
         ]);
 
         return redirect()
-            ->route('pages.index')
+            ->route('pages.index', [
+                'account' => $account,
+            ])
             ->with('success', 'Page created successfully.');
     }
 
     /**
      * Display the specified page.
      */
-    public function show(string $id)
+    public function show(string $account, Page $page)
     {
-        return redirect()->route('pages.index');
+        return redirect()
+            ->route('pages.index', [
+                'account' => $account,
+            ]);
     }
 
     /**
      * Show the form for editing the specified page.
      */
-    public function edit(string $id)
+    public function edit(string $account, Page $page)
     {
-        $page = Page::findOrFail($id);
+        $this->authorizePagePermission('can_edit');
 
         return view('backend.pages.edit', compact('page'));
     }
@@ -70,9 +90,9 @@ class PageController extends Controller
     /**
      * Update the specified page.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $account, Page $page)
     {
-        $page = Page::findOrFail($id);
+        $this->authorizePagePermission('can_edit');
 
         $validated = $request->validate([
             'description' => [
@@ -88,21 +108,25 @@ class PageController extends Controller
         ]);
 
         return redirect()
-            ->route('pages.index')
+            ->route('pages.index', [
+                'account' => $account,
+            ])
             ->with('success', 'Page updated successfully.');
     }
 
     /**
      * Remove the specified page.
      */
-    public function destroy(string $id)
+    public function destroy(string $account, Page $page)
     {
-        $page = Page::findOrFail($id);
+        $this->authorizePagePermission('can_delete');
 
         $page->delete();
 
         return redirect()
-            ->route('pages.index')
+            ->route('pages.index', [
+                'account' => $account,
+            ])
             ->with('success', 'Page deleted successfully.');
     }
 }

@@ -9,93 +9,103 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WaybillController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('admin.login');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-
-Route::post('/login', [AuthController::class, 'login'])->name('admin.login.submit');
-
-Route::get('/', [AuthController::class, 'showLoginForm'])->name('admin.login');
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-
 Route::post('/login', [AuthController::class, 'login'])->name('admin.login.submit');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'redirectByRole'])
-        ->name('dashboard');
+        ->name('dashboard.redirect');
 
-    Route::get('/super-admin/dashboard', [DashboardController::class, 'superAdminDashboard'])
-        ->name('super_admin.dashboard');
+    Route::prefix('{account}')
+        ->whereIn('account', [
+            'super-admin',
+            'admin',
+            'logistics',
+            'branch',
+            'operator',
+            'user',
+        ])
+        ->middleware('account.prefix')
+        ->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'accountDashboard'])
+                ->name('dashboard');
 
-    Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])
-        ->name('admin.dashboard');
+            Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::get('/logistics/dashboard', [DashboardController::class, 'logisticsDashboard'])
-        ->name('logistics.dashboard');
+            /*
+            |--------------------------------------------------------------------------
+            | Super Admin and Admin
+            |--------------------------------------------------------------------------
+            */
+            Route::middleware('role:super_admin,admin')->group(function () {
+                Route::resource('roles', RoleController::class);
+                Route::resource('privileges', PermissionController::class);
+                Route::resource('role-privileges', RolePermissionController::class);
+                Route::resource('pages', PageController::class);
 
-    Route::get('/branch/dashboard', [DashboardController::class, 'branchDashboard'])
-        ->name('branch.dashboard');
+                Route::resource('users', UserController::class);
+                Route::resource('branches', BranchController::class);
+                Route::resource('services', ServiceController::class);
+            });
 
-    Route::get('/operator/dashboard', [DashboardController::class, 'operatorDashboard'])
-        ->name('operator.dashboard');
+            /*
+            |--------------------------------------------------------------------------
+            | Logistics
+            |--------------------------------------------------------------------------
+            */
+            Route::middleware('role:super_admin,admin,logistics')->group(function () {
+                // Route::resource('waybill-logistics', WaybillLogisticController::class);
+            });
 
-    Route::get('/user/dashboard', [DashboardController::class, 'userDashboard'])
-        ->name('user.dashboard');
+            /*
+            |--------------------------------------------------------------------------
+            | Branch
+            |--------------------------------------------------------------------------
+            */
+            Route::middleware('role:super_admin,admin,branch')->group(function () {
+                // Route::resource('return-waybills', ReturnWaybillController::class);
+            });
 
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    /*
-    |--------------------------------------------------------------------------
-    | Super Admin and Admin
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:super_admin,admin')->group(function () {
-    Route::resource('roles', RoleController::class);
-    Route::resource('privileges', PermissionController::class);
-    Route::resource('role-privileges', RolePermissionController::class);
-    Route::resource('pages', PageController::class);
+            /*
+            |--------------------------------------------------------------------------
+            | Operator
+            |--------------------------------------------------------------------------
+            */
+            Route::middleware('role:super_admin,admin,operator')->group(function () {
+                // Route::resource('waybill-records', WaybillRecordController::class);
+                // Route::resource('waybill-items', WaybillItemController::class);
+                // Route::resource('waybill-photos', WaybillPhotoController::class);
+            });
 
-    Route::resource('users', UserController::class);
-    Route::resource('branches', BranchController::class);
-    Route::resource('services', ServiceController::class);
-    });
+            /*
+            |--------------------------------------------------------------------------
+            | Waybills / Logistics Tracking
+            |--------------------------------------------------------------------------
+            */
+            Route::middleware('role:super_admin,admin,logistics,branch,operator')->group(function () {
+                Route::post('/waybills/{waybill}/status', [WaybillController::class, 'updateStatus'])
+                    ->name('waybills.status.update');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Logistics
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:super_admin,admin,logistics')->group(function () {
-        // Route::resource('waybill-logistics', WaybillLogisticController::class);
-    });
+                Route::post('/waybills/{waybill}/accept-logistics', [WaybillController::class, 'acceptLogistics'])
+                    ->name('waybills.accept-logistics');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Branch
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:super_admin,admin,branch')->group(function () {
-        // Route::resource('waybills', WaybillController::class);
-        // Route::resource('return-waybills', ReturnWaybillController::class);
-    });
+                Route::post('/waybills/{waybill}/accept-main-hub', [WaybillController::class, 'acceptMainHub'])
+                    ->name('waybills.accept-main-hub');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Operator
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:super_admin,admin,operator')->group(function () {
-        // Route::resource('waybill-records', WaybillRecordController::class);
-        // Route::resource('waybill-items', WaybillItemController::class);
-        // Route::resource('waybill-photos', WaybillPhotoController::class);
-    });
+                Route::resource('waybills', WaybillController::class);
+            });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Regular User
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:user')->group(function () {
-        // User-only routes here
-    });
+            /*
+            |--------------------------------------------------------------------------
+            | Regular User
+            |--------------------------------------------------------------------------
+            */
+            Route::middleware('role:user')->group(function () {
+                // User-only routes here
+            });
+        });
 });

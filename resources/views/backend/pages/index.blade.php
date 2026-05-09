@@ -1,6 +1,17 @@
 @extends('layouts.backend')
 
 @section('content')
+@php
+    $user = auth()->user();
+    $account = request()->route('account');
+
+    $canCreate = $user && $user->hasPagePermission('pages', 'can_create');
+    $canEdit = $user && $user->hasPagePermission('pages', 'can_edit');
+    $canDelete = $user && $user->hasPagePermission('pages', 'can_delete');
+
+    $hasActions = $canEdit || $canDelete;
+@endphp
+
 <div class="max-w-screen-2xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div>
@@ -10,11 +21,13 @@
             </p>
         </div>
 
-        <a href="{{ route('pages.create') }}"
-           class="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold">
-            <i class="ri-add-line mr-2"></i>
-            Add Page
-        </a>
+        @if($canCreate)
+            <a href="{{ route('pages.create', ['account' => $account]) }}"
+               class="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold">
+                <i class="ri-add-line mr-2"></i>
+                Add Page
+            </a>
+        @endif
     </div>
 
     @if(session('success'))
@@ -31,7 +44,10 @@
                         <th class="px-6 py-4">#</th>
                         <th class="px-6 py-4">Description</th>
                         <th class="px-6 py-4">Created At</th>
-                        <th class="px-6 py-4 text-right">Actions</th>
+
+                        @if($hasActions)
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        @endif
                     </tr>
                 </thead>
 
@@ -50,32 +66,38 @@
                                 {{ $page->created_at?->format('M d, Y') }}
                             </td>
 
-                            <td class="px-6 py-4">
-                                <div class="flex justify-end gap-2">
-                                    <a href="{{ route('pages.edit', $page->id) }}"
-                                       class="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-semibold">
-                                        <i class="ri-edit-line mr-1"></i>
-                                        Edit
-                                    </a>
+                            @if($hasActions)
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-end gap-2">
+                                        @if($canEdit)
+                                            <a href="{{ route('pages.edit', ['account' => $account, 'page' => $page->id]) }}"
+                                               class="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-semibold">
+                                                <i class="ri-edit-line mr-1"></i>
+                                                Edit
+                                            </a>
+                                        @endif
 
-                                    <form action="{{ route('pages.destroy', $page->id) }}"
-                                          method="POST"
-                                          onsubmit="return confirm('Are you sure you want to delete this page?');">
-                                        @csrf
-                                        @method('DELETE')
+                                        @if($canDelete)
+                                            <form action="{{ route('pages.destroy', ['account' => $account, 'page' => $page->id]) }}"
+                                                  method="POST"
+                                                  onsubmit="return confirm('Are you sure you want to delete this page?');">
+                                                @csrf
+                                                @method('DELETE')
 
-                                        <button type="submit"
-                                                class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-semibold">
-                                            <i class="ri-delete-bin-line mr-1"></i>
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                                                <button type="submit"
+                                                        class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-semibold">
+                                                    <i class="ri-delete-bin-line mr-1"></i>
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-10 text-center text-gray-500">
+                            <td colspan="{{ $hasActions ? 4 : 3 }}" class="px-6 py-10 text-center text-gray-500">
                                 No pages found.
                             </td>
                         </tr>

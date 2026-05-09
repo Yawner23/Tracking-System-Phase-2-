@@ -6,36 +6,83 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    private function accountPrefix($user): string
+    {
+        $roleNames = $user->roles
+            ->pluck('name')
+            ->map(fn ($role) => strtolower(str_replace(' ', '_', $role)))
+            ->toArray();
+
+        if (in_array('super_admin', $roleNames)) {
+            return 'super-admin';
+        }
+
+        if (in_array('admin', $roleNames)) {
+            return 'admin';
+        }
+
+        if (in_array('logistics', $roleNames)) {
+            return 'logistics';
+        }
+
+        if (in_array('branch', $roleNames)) {
+            return 'branch';
+        }
+
+        if (in_array('operator', $roleNames)) {
+            return 'operator';
+        }
+
+        return 'user';
+    }
+
     public function redirectByRole()
     {
         $user = Auth::user();
 
-       $roleNames = $user->roles
-        ->pluck('name')
-        ->map(fn ($role) => strtolower(str_replace(' ', '_', $role)))
-        ->toArray();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        return redirect()->route('dashboard', [
+            'account' => $this->accountPrefix($user),
+        ]);
+    }
+
+    public function accountDashboard()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $roleNames = $user->roles
+            ->pluck('name')
+            ->map(fn ($role) => strtolower(str_replace(' ', '_', $role)))
+            ->toArray();
 
         if (in_array('super_admin', $roleNames)) {
-            return redirect()->route('super_admin.dashboard');
+            return $this->superAdminDashboard();
         }
 
         if (in_array('admin', $roleNames)) {
-            return redirect()->route('admin.dashboard');
+            return $this->adminDashboard();
         }
 
         if (in_array('logistics', $roleNames)) {
-            return redirect()->route('logistics.dashboard');
+            return $this->logisticsDashboard();
         }
 
         if (in_array('branch', $roleNames)) {
-            return redirect()->route('branch.dashboard');
+            return $this->branchDashboard();
         }
 
         if (in_array('operator', $roleNames)) {
-            return redirect()->route('operator.dashboard');
+            return $this->operatorDashboard();
         }
 
-        return redirect()->route('user.dashboard');
+        return $this->userDashboard();
     }
 
     public function superAdminDashboard()

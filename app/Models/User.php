@@ -57,9 +57,6 @@ class User extends Authenticatable
 
     public function hasPagePermission(string $pageDescription, string $permissionName = 'can_view'): bool
     {
-        if ($this->hasRole('Super Admin')) {
-            return true;
-        }
 
         $roleIds = $this->roles()->pluck('roles.id');
 
@@ -70,5 +67,30 @@ class User extends Authenticatable
             ->where('pages.description', $pageDescription)
             ->where('permissions.name', $permissionName)
             ->exists();
+    }
+
+    public function routePrefix(): string
+    {
+        if ($this->hasRole('Super Admin')) {
+            return 'super-admin';
+        }
+
+        if ($this->hasRole('Admin')) {
+            return 'admin';
+        }
+
+        if ($this->hasRole('Logistics')) {
+            return 'logistics';
+        }
+
+        if ($this->hasRole('Branch')) {
+            return 'branch';
+        }
+
+        if ($this->hasRole('Operator')) {
+            return 'operator';
+        }
+
+        return 'user';
     }
 }

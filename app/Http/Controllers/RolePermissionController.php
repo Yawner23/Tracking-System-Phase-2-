@@ -10,11 +10,22 @@ use Illuminate\Support\Facades\DB;
 
 class RolePermissionController extends Controller
 {
+    private function authorizeRolePrivilegePermission(string $permission): void
+    {
+        $user = auth()->user();
+
+        if (!$user || !$user->hasPagePermission('role-privileges', $permission)) {
+            abort(403, 'Unauthorized.');
+        }
+    }
+
     /**
      * Display a listing of role privileges.
      */
-    public function index()
+    public function index(string $account)
     {
+        $this->authorizeRolePrivilegePermission('can_view');
+
         $roles = Role::query()
             ->select('roles.*')
             ->selectSub(function ($query) {
@@ -22,7 +33,7 @@ class RolePermissionController extends Controller
                     ->selectRaw('COUNT(*)')
                     ->whereColumn('role_page_permission.role_id', 'roles.id');
             }, 'total_permissions')
-            ->orderBy('roles.id', 'desc')
+            ->latest()
             ->paginate(10);
 
         return view('backend.role_permissions.index', compact('roles'));
@@ -31,8 +42,10 @@ class RolePermissionController extends Controller
     /**
      * Show the form for creating role privileges.
      */
-    public function create()
+    public function create(string $account)
     {
+        $this->authorizeRolePrivilegePermission('can_create');
+
         $roles = Role::orderBy('name')->get();
         $pages = Page::orderBy('description')->get();
         $permissions = Permission::orderBy('name')->get();
@@ -47,8 +60,10 @@ class RolePermissionController extends Controller
     /**
      * Store role privileges.
      */
-    public function store(Request $request)
+    public function store(Request $request, string $account)
     {
+        $this->authorizeRolePrivilegePermission('can_create');
+
         $validated = $request->validate([
             'role_id' => ['required', 'exists:roles,id'],
             'permissions' => ['nullable', 'array'],
@@ -59,7 +74,9 @@ class RolePermissionController extends Controller
         $roleId = $validated['role_id'];
         $permissionMatrix = $validated['permissions'] ?? [];
 
-        $validPageIds = Page::pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $validPageIds = Page::pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->toArray();
 
         DB::transaction(function () use ($roleId, $permissionMatrix, $validPageIds) {
             DB::table('role_page_permission')
@@ -82,16 +99,20 @@ class RolePermissionController extends Controller
         });
 
         return redirect()
-            ->route('role-privileges.index')
+            ->route('role-privileges.index', [
+                'account' => $account,
+            ])
             ->with('success', 'Role privileges saved successfully.');
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified role privileges.
      */
-    public function show(string $id)
+    public function show(string $account, string $role_privilege)
     {
-        $role = Role::findOrFail($id);
+        $this->authorizeRolePrivilegePermission('can_view');
+
+        $role = Role::findOrFail($role_privilege);
         $pages = Page::orderBy('description')->get();
         $permissions = Permission::orderBy('name')->get();
 
@@ -115,9 +136,11 @@ class RolePermissionController extends Controller
     /**
      * Show the form for editing role privileges.
      */
-    public function edit(string $id)
+    public function edit(string $account, string $role_privilege)
     {
-        $role = Role::findOrFail($id);
+        $this->authorizeRolePrivilegePermission('can_edit');
+
+        $role = Role::findOrFail($role_privilege);
         $pages = Page::orderBy('description')->get();
         $permissions = Permission::orderBy('name')->get();
 
@@ -141,9 +164,11 @@ class RolePermissionController extends Controller
     /**
      * Update role privileges.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $account, string $role_privilege)
     {
-        $role = Role::findOrFail($id);
+        $this->authorizeRolePrivilegePermission('can_edit');
+
+        $role = Role::findOrFail($role_privilege);
 
         $validated = $request->validate([
             'permissions' => ['nullable', 'array'],
@@ -152,7 +177,10 @@ class RolePermissionController extends Controller
         ]);
 
         $permissionMatrix = $validated['permissions'] ?? [];
-        $validPageIds = Page::pluck('id')->map(fn ($pageId) => (string) $pageId)->toArray();
+
+        $validPageIds = Page::pluck('id')
+            ->map(fn ($pageId) => (string) $pageId)
+            ->toArray();
 
         DB::transaction(function () use ($role, $permissionMatrix, $validPageIds) {
             DB::table('role_page_permission')
@@ -175,23 +203,29 @@ class RolePermissionController extends Controller
         });
 
         return redirect()
-            ->route('role-privileges.index')
+            ->route('role-privileges.index', [
+                'account' => $account,
+            ])
             ->with('success', 'Role privileges updated successfully.');
     }
 
     /**
      * Remove all privileges from the role.
      */
-    public function destroy(string $id)
+    public function destroy(string $account, string $role_privilege)
     {
-        $role = Role::findOrFail($id);
+        $this->authorizeRolePrivilegePermission('can_delete');
+
+        $role = Role::findOrFail($role_privilege);
 
         DB::table('role_page_permission')
             ->where('role_id', $role->id)
             ->delete();
 
         return redirect()
-            ->route('role-privileges.index')
-            ->with('success', 'Role privileges removed successfully.');
+            ->route('role-privileges.index', [
+                'account' => $account,
+            ])
+            ->with('success', 'Role privileges deleted successfully.');
     }
 }

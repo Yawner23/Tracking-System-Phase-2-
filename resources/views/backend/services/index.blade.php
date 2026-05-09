@@ -5,9 +5,9 @@
     $user = auth()->user();
     $account = request()->route('account');
 
-    $canCreate = $user && $user->hasPagePermission('roles', 'can_create');
-    $canEdit = $user && $user->hasPagePermission('roles', 'can_edit');
-    $canDelete = $user && $user->hasPagePermission('roles', 'can_delete');
+    $canCreate = $user && $user->hasPagePermission('services', 'can_create');
+    $canEdit = $user && $user->hasPagePermission('services', 'can_edit');
+    $canDelete = $user && $user->hasPagePermission('services', 'can_delete');
 
     $hasActions = $canEdit || $canDelete;
 @endphp
@@ -15,15 +15,17 @@
 <div class="max-w-screen-2xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Roles</h1>
-            <p class="text-sm text-gray-500">Manage system roles and access levels.</p>
+            <h1 class="text-2xl font-bold text-gray-800">Services</h1>
+            <p class="text-sm text-gray-500">
+                Manage service types, prices, gross sales, and net sales.
+            </p>
         </div>
 
         @if($canCreate)
-            <a href="{{ route('roles.create', ['account' => $account]) }}"
+            <a href="{{ route('services.create', ['account' => $account]) }}"
                class="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold">
                 <i class="ri-add-line mr-2"></i>
-                Add Role
+                Add Service
             </a>
         @endif
     </div>
@@ -40,7 +42,10 @@
                 <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
                     <tr>
                         <th class="px-6 py-4">#</th>
-                        <th class="px-6 py-4">Role Name</th>
+                        <th class="px-6 py-4">Service Name</th>
+                        <th class="px-6 py-4">Price</th>
+                        <th class="px-6 py-4">Gross Sales</th>
+                        <th class="px-6 py-4">Net Sales</th>
                         <th class="px-6 py-4">Created At</th>
 
                         @if($hasActions)
@@ -50,25 +55,37 @@
                 </thead>
 
                 <tbody class="divide-y divide-gray-200">
-                    @forelse($roles as $role)
+                    @forelse($services as $service)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-gray-600">
-                                {{ $loop->iteration + ($roles->currentPage() - 1) * $roles->perPage() }}
+                                {{ $loop->iteration + ($services->currentPage() - 1) * $services->perPage() }}
                             </td>
 
                             <td class="px-6 py-4 font-semibold text-gray-900">
-                                {{ $role->name }}
+                                {{ $service->name }}
                             </td>
 
                             <td class="px-6 py-4 text-gray-600">
-                                {{ $role->created_at?->format('M d, Y') }}
+                                ₱{{ number_format($service->price, 2) }}
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                ₱{{ number_format($service->gross_sales, 2) }}
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                ₱{{ number_format($service->net_sales, 2) }}
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                {{ $service->created_at?->format('M d, Y') }}
                             </td>
 
                             @if($hasActions)
                                 <td class="px-6 py-4">
                                     <div class="flex justify-end gap-2">
                                         @if($canEdit)
-                                            <a href="{{ route('roles.edit', ['account' => $account, 'role' => $role->id]) }}"
+                                            <a href="{{ route('services.edit', ['account' => $account, 'service' => $service->id]) }}"
                                                class="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-semibold">
                                                 <i class="ri-edit-line mr-1"></i>
                                                 Edit
@@ -76,9 +93,9 @@
                                         @endif
 
                                         @if($canDelete)
-                                            <form action="{{ route('roles.destroy', ['account' => $account, 'role' => $role->id]) }}"
+                                            <form action="{{ route('services.destroy', ['account' => $account, 'service' => $service->id]) }}"
                                                   method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to delete this role?');">
+                                                  onsubmit="return confirm('Are you sure you want to delete this service?');">
                                                 @csrf
                                                 @method('DELETE')
 
@@ -95,8 +112,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $hasActions ? 4 : 3 }}" class="px-6 py-10 text-center text-gray-500">
-                                No roles found.
+                            <td colspan="{{ $hasActions ? 7 : 6 }}" class="px-6 py-10 text-center text-gray-500">
+                                No services found.
                             </td>
                         </tr>
                     @endforelse
@@ -104,9 +121,9 @@
             </table>
         </div>
 
-        @if($roles->hasPages())
+        @if($services->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
-                {{ $roles->links() }}
+                {{ $services->links() }}
             </div>
         @endif
     </div>

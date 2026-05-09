@@ -2,12 +2,12 @@
 
 @section('content')
 @php
-    $user = auth()->user();
+    $authUser = auth()->user();
     $account = request()->route('account');
 
-    $canCreate = $user && $user->hasPagePermission('roles', 'can_create');
-    $canEdit = $user && $user->hasPagePermission('roles', 'can_edit');
-    $canDelete = $user && $user->hasPagePermission('roles', 'can_delete');
+    $canCreate = $authUser && $authUser->hasPagePermission('users', 'can_create');
+    $canEdit = $authUser && $authUser->hasPagePermission('users', 'can_edit');
+    $canDelete = $authUser && $authUser->hasPagePermission('users', 'can_delete');
 
     $hasActions = $canEdit || $canDelete;
 @endphp
@@ -15,15 +15,17 @@
 <div class="max-w-screen-2xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Roles</h1>
-            <p class="text-sm text-gray-500">Manage system roles and access levels.</p>
+            <h1 class="text-2xl font-bold text-gray-800">Users</h1>
+            <p class="text-sm text-gray-500">
+                Manage system users, roles, and branch assignments.
+            </p>
         </div>
 
         @if($canCreate)
-            <a href="{{ route('roles.create', ['account' => $account]) }}"
+            <a href="{{ route('users.create', ['account' => $account]) }}"
                class="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold">
                 <i class="ri-add-line mr-2"></i>
-                Add Role
+                Add User
             </a>
         @endif
     </div>
@@ -40,7 +42,11 @@
                 <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
                     <tr>
                         <th class="px-6 py-4">#</th>
-                        <th class="px-6 py-4">Role Name</th>
+                        <th class="px-6 py-4">Name</th>
+                        <th class="px-6 py-4">Email</th>
+                        <th class="px-6 py-4">Contact Number</th>
+                        <th class="px-6 py-4">Branch</th>
+                        <th class="px-6 py-4">Roles</th>
                         <th class="px-6 py-4">Created At</th>
 
                         @if($hasActions)
@@ -50,25 +56,51 @@
                 </thead>
 
                 <tbody class="divide-y divide-gray-200">
-                    @forelse($roles as $role)
+                    @forelse($users as $user)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-gray-600">
-                                {{ $loop->iteration + ($roles->currentPage() - 1) * $roles->perPage() }}
+                                {{ $loop->iteration + ($users->currentPage() - 1) * $users->perPage() }}
                             </td>
 
                             <td class="px-6 py-4 font-semibold text-gray-900">
-                                {{ $role->name }}
+                                {{ $user->name }}
                             </td>
 
                             <td class="px-6 py-4 text-gray-600">
-                                {{ $role->created_at?->format('M d, Y') }}
+                                {{ $user->email }}
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                {{ $user->contact_number ?? 'N/A' }}
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                {{ $user->branch?->address ?? 'No Branch' }}
+                            </td>
+
+                            <td class="px-6 py-4">
+                                @if($user->roles->count())
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($user->roles as $role)
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                                {{ $role->name }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">No role</span>
+                                @endif
+                            </td>
+
+                            <td class="px-6 py-4 text-gray-600">
+                                {{ $user->created_at?->format('M d, Y') }}
                             </td>
 
                             @if($hasActions)
                                 <td class="px-6 py-4">
                                     <div class="flex justify-end gap-2">
                                         @if($canEdit)
-                                            <a href="{{ route('roles.edit', ['account' => $account, 'role' => $role->id]) }}"
+                                            <a href="{{ route('users.edit', ['account' => $account, 'user' => $user->id]) }}"
                                                class="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-semibold">
                                                 <i class="ri-edit-line mr-1"></i>
                                                 Edit
@@ -76,9 +108,9 @@
                                         @endif
 
                                         @if($canDelete)
-                                            <form action="{{ route('roles.destroy', ['account' => $account, 'role' => $role->id]) }}"
+                                            <form action="{{ route('users.destroy', ['account' => $account, 'user' => $user->id]) }}"
                                                   method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to delete this role?');">
+                                                  onsubmit="return confirm('Are you sure you want to delete this user?');">
                                                 @csrf
                                                 @method('DELETE')
 
@@ -95,8 +127,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $hasActions ? 4 : 3 }}" class="px-6 py-10 text-center text-gray-500">
-                                No roles found.
+                            <td colspan="{{ $hasActions ? 8 : 7 }}" class="px-6 py-10 text-center text-gray-500">
+                                No users found.
                             </td>
                         </tr>
                     @endforelse
@@ -104,9 +136,9 @@
             </table>
         </div>
 
-        @if($roles->hasPages())
+        @if($users->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
-                {{ $roles->links() }}
+                {{ $users->links() }}
             </div>
         @endif
     </div>

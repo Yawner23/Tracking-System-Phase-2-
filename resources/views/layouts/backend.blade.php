@@ -181,21 +181,10 @@
                 </li>
             @endif
 
-            {{-- Create New Waybill --}}
-            @if($can('create-waybill'))
-                <li>
-                    <a href="#"
-                       class="flex font-semibold items-center py-2 px-4 rounded-md text-gray-900 hover:bg-gray-900 hover:text-white">
-                        <i class="mr-3 text-lg ri-add-circle-line"></i>
-                        <span class="text-sm">Create New Waybill</span>
-                    </a>
-                </li>
-            @endif
-
             {{-- Logistics Tracking --}}
             @if($can('logistics-tracking'))
                 <li>
-                    <a href="#"
+                    <a href="{{ route('waybills.index') }}"
                        class="flex font-semibold items-center py-2 px-4 rounded-md text-gray-900 hover:bg-gray-900 hover:text-white">
                         <i class="mr-3 text-lg ri-truck-line"></i>
                         <span class="text-sm">Logistics Tracking</span>
