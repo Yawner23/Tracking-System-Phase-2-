@@ -766,6 +766,7 @@ class WaybillController extends Controller
 
             $waybill->update([
                 'current_status' => 'Received at Main Hub',
+                'payment_status' => 'Paid',
             ]);
 
             WaybillStatusHistory::create([
