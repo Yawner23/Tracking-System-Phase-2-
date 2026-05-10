@@ -381,7 +381,26 @@ class WaybillController extends Controller
                 }
             }
         });
+if ($request->hasFile('job_photo')) {
+    foreach ($request->file('job_photo') as $photo) {
 
+        $filename = time() . '_' . uniqid() . '.' . $photo->getClientOriginalExtension();
+
+        $photo->move(
+            public_path('uploads/waybills/photos'),
+            $filename
+        );
+
+        $path = 'uploads/waybills/photos/' . $filename;
+
+        WaybillPhoto::create([
+            'waybill_record_id' => $record->id,
+            'type' => 'job_photo',
+            'file_path' => $path,
+            'uploaded_by' => $user->id,
+        ]);
+    }
+}
         return redirect()
             ->route('waybills.index', ['account' => $account])
             ->with('success', 'Waybill created successfully.');
@@ -600,17 +619,25 @@ class WaybillController extends Controller
             }
 
             if ($request->hasFile('job_photo')) {
-                foreach ($request->file('job_photo') as $photo) {
-                    $path = $photo->store('uploads/waybills/photos', 'public');
+    foreach ($request->file('job_photo') as $photo) {
 
-                    WaybillPhoto::create([
-                        'waybill_record_id' => $waybill->id,
-                        'type' => 'job_photo',
-                        'file_path' => $path,
-                        'uploaded_by' => $user->id,
-                    ]);
-                }
-            }
+        $filename = time() . '_' . uniqid() . '.' . $photo->getClientOriginalExtension();
+
+        $photo->move(
+            public_path('uploads/waybills/photos'),
+            $filename
+        );
+
+        $path = 'uploads/waybills/photos/' . $filename;
+
+        WaybillPhoto::create([
+            'waybill_record_id' => $waybill->id,
+            'type' => 'job_photo',
+            'file_path' => $path,
+            'uploaded_by' => $user->id,
+        ]);
+    }
+}
 
             if ($request->hasFile('proof_of_payment')) {
                 foreach ($request->file('proof_of_payment') as $photo) {

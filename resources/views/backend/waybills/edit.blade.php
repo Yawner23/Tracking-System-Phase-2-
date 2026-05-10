@@ -334,7 +334,7 @@
                         <p class="text-xs text-gray-500 mb-2">Uploaded Proof of Payment:</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             @foreach($proofPhotos as $photo)
-                                <img src="{{ asset('storage/' . $photo->file_path) }}"
+                                <img src="{{ asset($photo->file_path) }}"
                                      alt="Proof of Payment"
                                      class="w-full h-40 object-cover rounded-lg border">
                             @endforeach

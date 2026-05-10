@@ -291,7 +291,7 @@
                             <a href="{{ asset('storage/' . $photo->file_path) }}"
                                target="_blank"
                                class="text-left border rounded-lg overflow-hidden block">
-                                <img src="{{ asset('storage/' . $photo->file_path) }}"
+                                <img src="{{ asset($photo->file_path) }}"
                                      alt="Photo"
                                      class="w-full h-48 object-cover hover:opacity-90 transition">
 
